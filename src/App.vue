@@ -3,7 +3,7 @@
     <!-- 네비게이션 -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container px-4 px-lg-5">
-        <router-link class="navbar-brand" to="/">Program List</router-link>
+        <router-link class="navbar-brand" to="/">Hit Company</router-link>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -13,35 +13,6 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/">Home</router-link>
             </li>
-            <li class="nav-item" style="display: none;">
-              <router-link class="nav-link" to="/about">About</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/review">후기 모음</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/contactForm">제작 문의</router-link>
-            </li>
-            <li class="nav-item" style="display: none;">
-              <router-link class="nav-link" to="/cafe">카페</router-link>
-            </li>
-
-            <!-- 티스토리 서브메뉴 -->
-            <li class="nav-item submenu-container"
-                @mouseenter="showTistory = true"
-                @mouseleave="showTistory = false">
-              <a class="nav-link" href="#">티스토리</a>
-              <ul class="submenu" v-show="showTistory">
-                <li><router-link class="submenu-item" to="/tistoryAd">자동발행이란?</router-link></li>
-                <li><router-link class="submenu-item" to="/tistoryGuide">사용법</router-link></li>
-                <li><router-link class="submenu-item" to="/tistoryPrice">가격</router-link></li>
-                <li style="display: none;"><router-link class="submenu-item" to="/tistory">티스토리 자동 발행</router-link></li>
-                <li  style="display: none;"><router-link class="submenu-item" to="/tistoryc">티스토리 자동 발행</router-link></li>
-                <li><router-link class="submenu-item" to="/tistoryce">티스토리 자동 발행</router-link></li>
-                <li><router-link class="submenu-item" to="/tistoryreview">애드센스 후기 모음</router-link></li>
-              </ul>
-            </li>
-
             <!-- 로그인한 사용자만 접근 -->
             <!-- 사용자 리스트: 특정 ID만 보이게 -->
             <li class="nav-item" v-if="isLoggedIn && user.userId === 'wschoi9'">

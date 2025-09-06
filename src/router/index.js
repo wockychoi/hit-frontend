@@ -1,82 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import Detail from '../views/Detail.vue'
-import Review from '../views/Review.vue'
-import ContactForm from '../views/ContactForm.vue'
-import Cafe from '../views/Cafe.vue'
-import Tistory from '../views/Tistory.vue'
-import Tistoryc from '../views/TistoryC.vue'
-import Tistoryce from '../views/TistoryCE.vue'
-import TistoryPrice from '../views/TistoryPrice.vue'
-import TistoryReview from '../views/TistoryReview.vue'
-import TistoryAd from '../views/TistoryAd.vue'
 import UserList from '../views/UserList.vue'
 import UserRegister from '../views/UserListRegister.vue'
 import Login from '../views/Login.vue'
-import TistoryGuide from '../views/TistoryGuide.vue'
 
 // Pinia 인증 상태 가져오기 (라우터 가드에서 사용)
 import { useAuthStore } from '../store/auth'
 
 const routes = [
-  { path: '/', component: Home },
-  {
-    path: '/detail/:productId',
-    name: 'Detail',
-    component: Detail
-  },
-  {
-    path: '/review/',
-    name: 'Review',
-    component: Review
-  },
-  {
-    path: '/contactForm/',
-    name: 'ContactForm',
-    component: ContactForm
-  },
-  {
-    path: '/cafe/',
-    name: 'Cafe',
-    component: Cafe
-  },
-  {
-    path: '/tistory/',
-    name: 'Tistory',
-    component: Tistory
-  },
-  {
-    path: '/tistoryc/',
-    name: 'Tistoryc',
-    component: Tistoryc
-  },
-  {
-    path: '/tistoryce/',
-    name: 'Tistoryce',
-    component: Tistoryce
-  },
-  {
-    path: '/tistoryreview/',
-    name: 'TistoryReview',
-    component: TistoryReview
-  },
-  {
-    path: '/tistoryguide/',
-    name: 'TistoryGuide',
-    component: TistoryGuide
-  },
-  ,
-  {
-    path: '/tistoryad/',
-    name: 'TistoryAd',
-    component: TistoryAd
-  },
-  {
-    path: '/tistoryprice/',
-    name: 'TistoryPrice',
-    component: TistoryPrice,
-    meta: { requiresAuth: true } // 보호
-  },
+  { path: '/', component: Home },  
   {
     path: '/userlist/',
     name: 'UserList',
