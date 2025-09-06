@@ -1,231 +1,478 @@
 <template>
-  <div>
-    <!-- Header -->
-    <header class="bg-dark py-5">
-      <div class="container px-4 px-lg-5 my-5">
-        <div class="text-center text-white">
-          <h1 class="display-4 fw-bolder text-white text-center">
-            프로그램은 프로그램 다워야 한다!<br>개발에 대한 신념입니다.
-          </h1>
-          <p class="lead fw-normal text-white-50 text-center mb-4">
-            With this program list homepage template
-          </p>
+  <div class="table-container">
+    <h2>📦 주문내역 관리</h2>
+    <p>Total {{ orders.length }}건</p>
 
-          <div class="text-center mb-4">
-            <button type="button" class="btn btn-warning btn-lg px-4" @click="kakaoOpen">
-              💬 프로그램 제작 문의하기
-            </button>
-          </div>
+    <div class="table-wrapper">
+      <table class="order-table">
+        <thead>
+          <tr>
+            <th>비교</th>
+            <th>주문일자</th>
+            <th>출고일자</th>
+            <th>택배사</th>
+            <th>송장번호</th>
+            <th>거래처명</th>
+            <th>수령자/상품고유번호</th>
+            <th>휴대전화/상품명</th>
+            <th>결재수단</th>
+            <th>우편번호</th>
+            <th>수량</th>
+            <th>단가</th>
+            <th>금액</th>
+            <th>택배비</th>
+            <th>총결재금액</th>
+            <th>배송메세지</th>
+            <th>관리자메모</th>
+            <th>배송지</th>
+            <th>복사</th>
+            <th>수정</th>
+            <th>추가</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(order, index) in paginatedOrders" :key="index">
+            <!-- 체크박스 -->
+            <td>
+              <input
+                type="checkbox"
+                v-model="selectedOrders"
+                :value="index + (currentPage - 1) * pageSize"
+              />
+            </td>
 
-          <div class="text-center text-white">
-            <div class="mb-2">
-              <span @click="youtubeOpen" class="text-decoration-none text-info fw-bold"  style=" cursor: pointer;">
-                📺 프로그램 영상 확인하기 Click
-              </span>
-            </div>
-            <div class="text-white-50">
-              📱 프로그램 문의 (KAKAO Talk): <span class="text-warning fw-bold">nglemfk8</span>
-            </div>
-          </div>
-          
+            <!-- 일반 데이터/수정 -->
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.주문일자"
+                type="date"
+                class="edit-input"
+              />
+              <span v-else>{{ order.주문일자 }}</span>
+            </td>
 
-          
-        </div>
-      </div>
-    </header>
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.출고일자"
+                type="date"
+                class="edit-input"
+              />
+              <span v-else>{{ order.출고일자 }}</span>
+            </td>
 
-    <!-- Products -->
-    <section class="py-5">
-      <div class="container px-4 px-lg-5 mt-5">
-        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
-          <div class="col mb-5" v-for="product in products" :key="product.id">
-            <div class="card h-100">
-              <div v-if="product.sale" class="badge bg-dark text-white position-absolute" style="top: 0.5rem; right: 0.5rem">Sale</div>
-              <img class="card-img-top" :src="product.image" alt="상품 이미지" />
-              <div class="card-body p-4">
-                <div class="text-center">
-                  <h5 class="fw-bolder">{{ product.name }}</h5>
-                  <div v-if="product.stars" class="d-flex justify-content-center small text-warning mb-2">
-                    <div v-for="n in product.stars" :key="n" class="bi-star-fill"></div>
-                  </div>
-                  <div v-if="product.oldPrice">
-                    {{ product.price }}
-                    <span class="text-muted text-decoration-line-through">{{ product.oldPrice }}</span>
-                  </div>
-                  <div v-else>
-                    {{ product.price }}
-                  </div>
-                  <div v-if="product.review">
-                    <p v-html="product.review"></p>
-                  </div>
-                </div>
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.택배사"
+                type="text"
+                class="edit-input"
+              />
+              <span v-else>{{ order.택배사 }}</span>
+            </td>
+
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.송장번호"
+                type="text"
+                class="edit-input"
+              />
+              <span v-else>{{ order.송장번호 }}</span>
+            </td>
+
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.거래처명"
+                type="text"
+                class="edit-input"
+              />
+              <span v-else>{{ order.거래처명 }}</span>
+            </td>
+
+            <!-- 수령자 + 상품고유번호 -->
+            <td>
+              <div v-if="isEditing(index)">
+                <input
+                  v-model="order.주문자"
+                  type="text"
+                  class="edit-input"
+                  placeholder="수령자"
+                />
+                <input
+                  v-model="order.상품고유번호"
+                  type="text"
+                  class="edit-input"
+                  placeholder="상품고유번호"
+                />
               </div>
-              <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                <div class="text-center">
-                  <button class="btn btn-outline-dark mt-auto" @click="openPopup(product.id)">
-                    {{ product.buttonText }}
-                  </button>
-                </div>
+              <div v-else>
+                <div>{{ order.주문자 }}</div>
+                <div>{{ order.상품고유번호 }}</div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+            </td>
+
+            <!-- 휴대전화 + 상품명 -->
+            <td>
+              <div v-if="isEditing(index)">
+                <input
+                  v-model="order.휴대전화"
+                  type="text"
+                  class="edit-input"
+                  placeholder="휴대전화"
+                />
+                <input
+                  v-model="order.상품명"
+                  type="text"
+                  class="edit-input"
+                  placeholder="상품명"
+                />
+              </div>
+              <div v-else>
+                <div>{{ order.휴대전화 }}</div>
+                <div>{{ order.상품명 }}</div>
+              </div>
+            </td>
+
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.결재수단"
+                type="text"
+                class="edit-input"
+              />
+              <span v-else>{{ order.결재수단 }}</span>
+            </td>
+
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model="order.우편번호"
+                type="text"
+                class="edit-input"
+              />
+              <span v-else>{{ order.우편번호 }}</span>
+            </td>
+
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model.number="order.수량"
+                type="number"
+                class="edit-input"
+              />
+              <span v-else>{{ order.수량 }}</span>
+            </td>
+
+            <td>
+              <input
+                v-if="isEditing(index)"
+                v-model.number="order.단가"
+                type="number"
+                class="edit-input"
+              />
+              <span v-else>{{ order.단가 }}</span>
+            </td>
+
+            <td>{{ order.금액 }}</td>
+            <td>{{ order.택배비 }}</td>
+            <td>{{ order.총결재금액 }}</td>
+
+            <!-- 두 줄 입력 (textarea) -->
+            <td>
+              <textarea
+                v-if="isEditing(index)"
+                v-model="order.배송메세지"
+                rows="2"
+                class="edit-textarea"
+              ></textarea>
+              <span v-else>{{ order.배송메세지 }}</span>
+            </td>
+
+            <td>
+              <textarea
+                v-if="isEditing(index)"
+                v-model="order.관리자메모"
+                rows="2"
+                class="edit-textarea"
+              ></textarea>
+              <span v-else>{{ order.관리자메모 }}</span>
+            </td>
+
+            <td>
+              <textarea
+                v-if="isEditing(index)"
+                v-model="order.배송지"
+                rows="2"
+                class="edit-textarea"
+              ></textarea>
+              <span v-else>{{ order.배송지 }}</span>
+            </td>
+
+            <!-- 버튼 -->
+            <td>
+              <button class="btn copy" @click="copyRow(index)">복사</button>
+            </td>
+            <td>
+              <button class="btn edit" @click="editRow(index)">
+                {{ editIndex === index ? "저장" : "수정" }}
+              </button>
+            </td>
+            <td>
+              <button class="btn add" @click="addRow">추가</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 페이징 -->
+    <div class="pagination">
+      <button @click="prevPage" :disabled="currentPage === 1">이전</button>
+      <span>{{ currentPage }}</span>
+      <button @click="nextPage" :disabled="currentPage >= totalPages">다음</button>
+    </div>
   </div>
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
-  name: 'Home',
   data() {
     return {
-      products: [
+      editIndex: null,
+      currentPage: 1,
+      pageSize: 5,
+      selectedOrders: [],
+      orders: [
         {
-          id: 1,
-          name: '티스토리 자동포스팅',
-          price: '25,000원(30일)',
-          oldPrice: '30,000(30일)',
-          image: '/programlist/tistory/tistory_home.png',
-          sale: false,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><strong>티스토리 자동포스팅 프로그램</strong>은 <span style="color:red;">키워드 기반</span>으로 자동 글 등록이 가능한 프로그램</span>'
+          주문일자: "2025-09-01",
+          출고일자: "2025-09-02",
+          택배사: "CJ대한통운",
+          송장번호: "6915-0642-5911",
+          거래처명: "히든컴퍼니",
+          주문자: "김철수",
+          상품고유번호: "P-1001",
+          휴대전화: "010-1234-5678",
+          상품명: "프리미엄사료 10kg",
+          결재수단: "카드",
+          우편번호: "05342",
+          수량: 2,
+          단가: 15000,
+          금액: 30000,
+          택배비: 3000,
+          총결재금액: 33000,
+          배송메세지: "부재시 문앞에 두세요",
+          관리자메모: "첫주문 고객",
+          배송지: "서울 강동구 천호동",
         },
         {
-          id: 2,
-          name: '카카오톡 채팅 봇',
-          price: '10,000원(30일)',
-          
-          image: '/programlist/kakao/kakaobot_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">지정한 카카오톡 채팅방을</span> 등록한 문구를 자동으로 보내는 프로그램</span>'
+          주문일자: "2025-09-02",
+          출고일자: "2025-09-03",
+          택배사: "롯데택배",
+          송장번호: "4077-1005-301",
+          거래처명: "굿컴퍼니",
+          주문자: "이민호",
+          상품고유번호: "P-1002",
+          휴대전화: "010-9876-5432",
+          상품명: "강아지 간식 종세트",
+          결재수단: "무통장",
+          우편번호: "06234",
+          수량: 1,
+          단가: 12000,
+          금액: 12000,
+          택배비: 0,
+          총결재금액: 12000,
+          배송메세지: "빠른 배송 부탁드려요",
+          관리자메모: "VIP 고객",
+          배송지: "서울 서초구 반포동",
         },
-        {
-          id: 3,
-          name: '블로그 댓글 매크로',
-          price: '20,000원(30일)',          
-          image: '/programlist/blog/blog_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">신규글에 </span>빠르게 댓글을 등록하는 프로그램</span>'
-        },
-        {
-          id: 4,
-          name: '카페 댓글 매크로',
-          price: '20,000원(30일)',          
-          image: '/programlist/cafe/cafe_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">신규글에 </span>빠르게 댓글을 등록하는 프로그램</span>'
-        },
-        {
-          id: 5,
-          name: '밴드 댓글 매크로',
-          price: '30,000원(30일)',          
-          image: '/programlist/band/band_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">신규글에 </span>빠르게 댓글을 등록하는 프로그램</span>'
-        },
-        {
-          id: 6,
-          name: '밴드 댓글 매크로(막힘->허용)',
-          price: '30,000원(30일)',          
-          image: '/programlist/bandOption/bandOption_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">기존 댓글이 막혀있는 게시글에</span> 빠르게 댓글을 등록하는 프로그램</span>'
-        },
-        {
-          id: 7,
-          name: '블로그 추출기',
-          price: '30,000원(30일)',          
-          image: '/programlist/blogExtract/blogExtract_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">키워드 기반으로</span>블로그를 추출하는 프로그램</span>'
-        },
-        {
-          id: 8,
-          name: '카페 추출기',
-          price: '30,000원(30일)',          
-          image: '/programlist/cafeExtract/cafeExtract_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">입력한 카페를</span> 추출하는 프로그램</span>'
-        },
-        {
-          id: 9,
-          name: '유투브 댓글 추출기',
-          price: '30,000원(30일)',          
-          image: '/programlist/youtube/youtube_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">유투브 댓글, 대댓글</span> 추출하는 프로그램</span>'
-        },
-        {
-          id: 10,
-          name: '블로그 수급 프로그램',
-          price: '50,000원(30일)',          
-          image: '/programlist/blogSugup/blogSugup_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">최적화, 준최적화 블로그</span> 수급하는 프로그램</span>'
-        },
-        {
-          id: 11,
-          name: '골프장,테니스 예약 프로그램',
-          price: 'N/A',          
-          image: '/programlist/macro/macro_home.png',
-          sale: true,
-          stars: 5,
-          buttonText: 'View detail',
-          review: '<span style="font-size:0.9rem"><span style="color:red;">각종 골프장, 테니스 사이트</span> 예약하는 프로그램</span>'
-        },
-        
-        // 추가 아이템도 원하면 넣을 수 있어요
-      ]
-    }
+      ],
+    };
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.orders.length / this.pageSize);
+    },
+    paginatedOrders() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      return this.orders.slice(start, start + this.pageSize);
+    },
   },
   methods: {
-    openPopup(productId) {
-    this.$router.push({ name: 'Detail', params: { productId } });
+    isEditing(index) {
+      return this.editIndex === index;
     },
-    kakaoOpen() {
-      const url = 'https://open.kakao.com/o/sWcxAaFh';
-      window.open(url, '문의하기', 'width=800,height=500,scrollbars=yes');
+    prevPage() {
+      if (this.currentPage > 1) this.currentPage--;
     },
-    youtubeOpen(){
-      const url = "https://www.youtube.com/@wakcro9648"
-      window.open(url, '문의하기', 'width=1000,height=800,scrollbars=yes');      
-    }
-  }
-}
+    nextPage() {
+      if (this.currentPage < this.totalPages) this.currentPage++;
+    },
+    copyRow(index) {
+      const globalIndex = index + (this.currentPage - 1) * this.pageSize;
+      const newRow = { ...this.orders[globalIndex] };
+      this.orders.splice(globalIndex + 1, 0, newRow);
+      axios
+        .post("http://15.165.125.244:8080/admin/api/order/save", newRow)
+        .then(() => {
+          alert("복사된 주문 저장 완료");
+        });
+    },
+    addRow() {
+      const newRow = {
+        주문일자: "",
+        출고일자: "",
+        택배사: "",
+        송장번호: "",
+        거래처명: "",
+        주문자: "",
+        상품고유번호: "",
+        휴대전화: "",
+        상품명: "",
+        결재수단: "",
+        우편번호: "",
+        수량: 0,
+        단가: 0,
+        금액: 0,
+        택배비: 0,
+        총결재금액: 0,
+        배송메세지: "",
+        관리자메모: "",
+        배송지: "",
+      };
+      this.orders.push(newRow);
+      axios
+        .post("http://15.165.125.244:8080/admin/api/order/add", newRow)
+        .then(() => {
+          alert("새 주문 추가 완료");
+        });
+    },
+    editRow(index) {
+      const globalIndex = index + (this.currentPage - 1) * this.pageSize;
+      if (this.editIndex === index) {
+        // 저장 모드
+        this.orders[globalIndex].금액 =
+          this.orders[globalIndex].수량 * this.orders[globalIndex].단가;
+        this.orders[globalIndex].총결재금액 =
+          this.orders[globalIndex].금액 + this.orders[globalIndex].택배비;
+
+        axios
+          .post(
+            "http://15.165.125.244:8080/admin/api/order/modify",
+            this.orders[globalIndex]
+          )
+          .then(() => {
+            alert("주문 수정 완료");
+          });
+        this.editIndex = null;
+      } else {
+        this.editIndex = index;
+      }
+    },
+  },
+};
 </script>
 
 <style>
-@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css');
-
-body {
-  font-family: 'Noto Sans KR', sans-serif;
-  line-height: 1.6;
-  color: #333;
+.table-container {
+  width: 100%;
+  margin: 20px auto;
+  padding: 10px;
+  background: #fff;
+  border-radius: 10px;
 }
-.text-center a:hover {
-  text-decoration: underline;
-  color: #ffc107;
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto; /* 모바일에서 가로 스크롤 가능 */
+}
+
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  table-layout: fixed; /* 반응형 고정 */
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.order-table th {
+  background: #222;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+}
+
+.order-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.order-table td div {
+  line-height: 1.4;
+}
+
+.edit-input {
+  width: 95%;
+  padding: 4px;
+  margin: 2px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.edit-textarea {
+  width: 95%;
+  padding: 4px;
+  margin: 2px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.btn {
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+  margin: 2px;
+  border-radius: 5px;
+  color: #fff;
+}
+
+.btn.copy {
+  background: #6c757d;
+}
+
+.btn.edit {
+  background: #ffc107;
+}
+
+.btn.add {
+  background: #28a745;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 6px 12px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
+
+.pagination button:disabled {
+  background: #ccc;
 }
 </style>

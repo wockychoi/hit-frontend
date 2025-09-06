@@ -19,7 +19,7 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">이름</label>
+          <label class="form-label">회사명</label>
           <input v-model="form.userNm" type="text" class="form-control" required />
         </div>
 
@@ -33,7 +33,7 @@
           <input v-model="form.phoneNumber" type="text" class="form-control" required />
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" style="display: none;">
           <label class="form-label">추천인 (선택)</label>
           <input v-model="form.recommenderId" type="text" class="form-control" />
         </div>
