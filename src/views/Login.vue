@@ -57,7 +57,7 @@ const submitLogin = async () => {
       password: encryptedPassword
     }
 
-    const res = await axios.post('/admin/api/user/login', payload)
+    const res = await axios.post('http://localhost:8080/admin/api/user/login', payload)
 
     const { accessToken, refreshToken, user } = res.data
 

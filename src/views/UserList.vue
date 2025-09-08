@@ -20,11 +20,8 @@
           <th>이름</th>
           <th>메일 주소</th>
           <th>연락처</th>
-          <th>포인트 잔고</th>
-          <th>포인트 추가</th>
-          <th>포인트 차감</th>
           <th>수정</th>
-          <th>사용여부</th>
+          <th>관리자여부</th>
         </tr>
       </thead>
       <tbody>
@@ -33,41 +30,21 @@
           <td>{{ user.userNm }}</td>
           <td>{{ user.email }}</td>
           <td>{{ user.phoneNumber }}</td>
-          <td>{{ user.pointBalance }}</td>
-
-          <td class="d-flex flex-column gap-1">
-            <select v-model.number="user.addPoint" class="form-select form-select-sm">
-              <option disabled value="">선택</option>
-              <option :value="10000">10,000점</option>
-              <option :value="30000">30,000점</option>
-              <option :value="50000">50,000점</option>
-            </select>
-
-            <input v-model.number="user.addPoint" type="number" class="form-control form-control-sm" placeholder="직접 입력" />
-          </td>
-
-          <td>
-            <input v-model.number="user.deductPoint" type="number" class="form-control form-control-sm" placeholder="차감 포인트" />
-          </td>
-
           <td>
             <button class="btn btn-sm btn-warning" @click="updatePoint(user)">Update</button>
           </td>
 
           <td>
-            <select v-model="user.useYn" class="form-select form-select-sm">
+            <select v-model="user.roleId" class="form-select form-select-sm">
               <option disabled value="">선택</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
+              <option value="2">Y</option>
+              <option value="1">N</option>
             </select>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <div class="text-end mt-3">
-      <button class="btn btn-success">+ 사용자 추가</button>
-    </div>
   </div>
 </template>
 
@@ -90,7 +67,7 @@ const filteredUserList = computed(() => {
 // 사용자 목록 로딩
 onMounted(async () => {
   try {
-    const res = await axios.get('http://15.165.125.244:8080/admin/api/user/list')
+    const res = await axios.get('http://localhost:8080/admin/api/user/list')
     userList.value = res.data.map(user => ({
       ...user,
       addPoint: 0,
@@ -104,26 +81,20 @@ onMounted(async () => {
 // 포인트 업데이트
 const updatePoint = async (user) => {
   try {
-    const temPointBalance = Number(user.pointBalance) + Number(user.addPoint) - Number(user.deductPoint)
+   
     const payload = {
       userId: user.userId,
-      useYn: user.useYn,
-      addPoint: user.addPoint || 0,
-      deductPoint: user.deductPoint || 0,
-      pointBalance: temPointBalance || 0
+      roleId: user.roleId
     }
 
-    await axios.post('http://15.165.125.244:8080/admin/api/user/modify', payload)
+    await axios.post('http://localhost:8080/admin/api/user/modify', payload)
 
-    const netChange = Number(payload.addPoint) - Number(payload.deductPoint)
-    user.pointBalance = Number(user.pointBalance) + netChange
-    user.addPoint = 0
-    user.deductPoint = 0
+   
 
-    alert(`✅ ${user.userNm}님의 포인트가 업데이트 되었습니다.`)
+    alert(`✅ ${user.userNm}님의 업데이트 되었습니다.`)
   } catch (err) {
-    console.error('포인트 업데이트 실패', err)
-    alert('❌ 포인트 업데이트 실패')
+    console.error('업데이트 실패', err)
+    alert('❌ 업데이트 실패')
   }
 }
 </script>

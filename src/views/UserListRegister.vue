@@ -78,7 +78,8 @@ const checkDuplicateId = async () => {
   }
 
   try {
-    const res = await axios.get(`http://15.165.125.244:8080/admin/api/user/duplicate?userId=${form.userId}`)
+    //const res = await axios.get(`http://15.165.125.244:8080/admin/api/user/duplicate?userId=${form.userId}`)
+    const res = await axios.get(`http://localhost:8080/admin/api/user/duplicate?userId=${form.userId}`)
     if (res.data.userId) {
       alert('❌ 이미 사용 중인 아이디입니다.')
       isDuplicateChecked.value = false
@@ -116,7 +117,9 @@ const submitForm = async () => {
       recommenderId: form.recommenderId
     }
 
-    const res = await axios.post('http://15.165.125.244:8080/admin/api/user/register', payload)
+    //const res = await axios.post('http://15.165.125.244:8080/admin/api/user/register', payload)
+    const res = await axios.post('http://localhost:8080/admin/api/user/register', payload)
+    
 
     alert('✅ 회원가입이 완료되었습니다.')
     router.push('/login') 

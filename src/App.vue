@@ -15,7 +15,7 @@
             </li>
             <!-- 로그인한 사용자만 접근 -->
             <!-- 사용자 리스트: 특정 ID만 보이게 -->
-            <li class="nav-item" v-if="isLoggedIn && user.userId === 'wschoi9'">
+            <li class="nav-item" v-if="isLoggedIn && user.roleId === '2'">
               <router-link class="nav-link" to="/userList">사용자리스트</router-link>
             </li>
             <li class="nav-item" style="display: none;" >
