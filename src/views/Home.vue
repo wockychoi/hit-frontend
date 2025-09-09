@@ -1,13 +1,41 @@
 <template>
   <div class="table-container">
     <h2>📦 주문내역 관리</h2>
-    <p>Total {{ orders.length }}건</p>
+    <p>Total {{ filteredOrders.length }}건</p>
 
+    <!-- 검색창 -->
+    <div class="search-bar">
+      <select v-model="searchField">
+        <option value="shippingDate">출고일자</option>
+        <option value="productName">상품명</option>
+        <option value="ordererName">주문자</option>
+        <option value="recPerson">수령자</option>
+        <option value="orderSeq">주문번호</option>
+        <option value="orderDate">주문일자</option>
+      </select>
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="검색어를 입력하세요"
+      />
+      <button @click="clearSearch">❌ 초기화</button>
+    </div>
+
+    <!-- 액션 버튼 -->
+    <div class="global-actions">
+      <button class="btn-add" @click="addOrder">➕ 추가</button>
+      <button class="btn-copy" @click="copySelected">📑 복사</button>
+      <button class="btn-save" @click="saveSelected">💾 선택 저장</button>
+      <button class="btn-update" @click="updateSelected">✏️ 선택 수정</button>
+      <button class="btn-delete" @click="deleteSelected">🗑️ 선택 삭제</button>
+    </div>
+
+    <!-- 테이블 -->
     <div class="table-wrapper">
       <table class="order-table">
         <thead>
           <tr>
-            <th>비교</th>
+            <th>선택</th>
             <th>출고일자</th>
             <th>택배사</th>
             <th>송장번호</th>
@@ -15,25 +43,30 @@
             <th>구분</th>
             <th>거래처명</th>
             <th>주문자</th>
-            <th>수령자/상품고유번호</th>
-            <th>휴대전화/상품명</th>
-            <th>결재수단</th>
-            <th>우편번호/수량</th>
+            <th>수령자</th>
+            <th>상품고유번호</th>
+            <th>휴대전화</th>
+            <th>상품명</th>
+            <th>결제수단</th>
+            <th>우편번호</th>
             <th>수량</th>
             <th>단가</th>
             <th>금액</th>
             <th>택배비</th>
-            <th>총결재금액</th>
+            <th>총결제금액</th>
             <th>배송메세지</th>
             <th>관리자메모</th>
             <th>배송지</th>
-            <th class="th-action">액션</th>
+            <th>작업</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(order, localIndex) in paginatedOrders" :key="getGlobalIndex(localIndex)">
-            <!-- 비교 체크박스 (value는 전역 인덱스) -->
-            <td class="td-check">
+          <tr
+            v-for="(order, localIndex) in paginatedOrders"
+            :key="order.orderSeq || getGlobalIndex(localIndex)"
+          >
+            <!-- 체크박스 -->
+            <td>
               <input
                 type="checkbox"
                 v-model="selectedOrders"
@@ -41,132 +74,100 @@
               />
             </td>
 
+            <!-- 수정 모드 적용 -->
             <td>
-              <input
-                v-if="isEditing(localIndex)"
-                v-model="order.출고일자"
-                type="date"
-                class="edit-input"
-              />
-              <span v-else>{{ order.출고일자 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.shippingDate }}</span>
+              <input v-else v-model="order.shippingDate" type="date" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.택배사" class="edit-input" />
-              <span v-else>{{ order.택배사 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.courier }}</span>
+              <input v-else v-model="order.courier" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.송장번호" class="edit-input" />
-              <span v-else>{{ order.송장번호 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.trackingNo }}</span>
+              <input v-else v-model="order.trackingNo" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.주문일자" type="date" class="edit-input" />
-              <span v-else>{{ order.주문일자 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.orderDate }}</span>
+              <input v-else v-model="order.orderDate" type="date" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.구분" class="edit-input" />
-              <span v-else>{{ order.구분 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.orderType }}</span>
+              <input v-else v-model="order.orderType" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.거래처명" class="edit-input" />
-              <span v-else>{{ order.거래처명 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.customerName }}</span>
+              <input v-else v-model="order.customerName" class="edit-input" />
             </td>
-<td>
-              <input v-if="isEditing(localIndex)" v-model="order.구분" class="edit-input" />
-              <span v-else>{{ order.구분 }}</span>
-            </td>
-            <!-- 수령자 + 상품고유번호 -->
             <td>
-              <div v-if="isEditing(localIndex)">
-                <input v-model="order.주문자" class="edit-input" placeholder="수령자" />
-                <input v-model="order.상품고유번호" class="edit-input" placeholder="상품고유번호" />
-              </div>
-              <div v-else>
-                <div>{{ order.주문자 }}</div>
-                <div>{{ order.상품고유번호 }}</div>
-              </div>
+              <span v-if="editRow !== order.orderSeq">{{ order.ordererName }}</span>
+              <input v-else v-model="order.ordererName" class="edit-input" />
             </td>
-            
-            <!-- 휴대전화 + 상품명 -->
             <td>
-              <div v-if="isEditing(localIndex)">
-                <input v-model="order.휴대전화" class="edit-input" placeholder="휴대전화" />
-                <input v-model="order.상품명" class="edit-input" placeholder="상품명" />
-              </div>
-              <div v-else>
-                <div>{{ order.휴대전화 }}</div>
-                <div>{{ order.상품명 }}</div>
-              </div>
+              <span v-if="editRow !== order.orderSeq">{{ order.recPerson }}</span>
+              <input v-else v-model="order.recPerson" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.결재수단" class="edit-input" />
-              <span v-else>{{ order.결재수단 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.productCode }}</span>
+              <input v-else v-model="order.productCode" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model="order.우편번호" class="edit-input" />
-              <span v-else>{{ order.우편번호 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.phoneNumber }}</span>
+              <input v-else v-model="order.phoneNumber" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model.number="order.수량" type="number" class="edit-input" />
-              <span v-else>{{ order.수량 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.productName }}</span>
+              <input v-else v-model="order.productName" class="edit-input" />
             </td>
-
             <td>
-              <input v-if="isEditing(localIndex)" v-model.number="order.단가" type="number" class="edit-input" />
-              <span v-else>{{ order.단가 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.paymentMethod }}</span>
+              <input v-else v-model="order.paymentMethod" class="edit-input" />
             </td>
-
-            <td>{{ order.금액 }}</td>
-            <td>{{ order.택배비 }}</td>
-            <td>{{ order.총결재금액 }}</td>
-
             <td>
-              <textarea v-if="isEditing(localIndex)" v-model="order.배송메세지" rows="2" class="edit-textarea"></textarea>
-              <span v-else>{{ order.배송메세지 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.postalCode }}</span>
+              <input v-else v-model="order.postalCode" class="edit-input" />
             </td>
-
             <td>
-              <textarea v-if="isEditing(localIndex)" v-model="order.관리자메모" rows="2" class="edit-textarea"></textarea>
-              <span v-else>{{ order.관리자메모 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.quantity }}</span>
+              <input v-else v-model.number="order.quantity" type="number" class="edit-input" />
             </td>
-
             <td>
-              <textarea v-if="isEditing(localIndex)" v-model="order.배송지" rows="2" class="edit-textarea"></textarea>
-              <span v-else>{{ order.배송지 }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ order.unitPrice }}</span>
+              <input v-else v-model.number="order.unitPrice" type="number" class="edit-input" />
+            </td>
+            <td>{{ order.quantity * order.unitPrice }}</td>
+            <td>
+              <span v-if="editRow !== order.orderSeq">{{ order.shippingFee }}</span>
+              <input v-else v-model.number="order.shippingFee" type="number" class="edit-input" />
+            </td>
+            <td>{{ (order.quantity * order.unitPrice) + (order.shippingFee || 0) }}</td>
+            <td>
+              <span v-if="editRow !== order.orderSeq">{{ order.deliveryMessage }}</span>
+              <textarea v-else v-model="order.deliveryMessage" class="edit-textarea"></textarea>
+            </td>
+            <td>
+              <span v-if="editRow !== order.orderSeq">{{ order.adminMemo }}</span>
+              <textarea v-else v-model="order.adminMemo" class="edit-textarea"></textarea>
+            </td>
+            <td>
+              <span v-if="editRow !== order.orderSeq">{{ order.deliveryAddress }}</span>
+              <textarea v-else v-model="order.deliveryAddress" class="edit-textarea"></textarea>
             </td>
 
-            <!-- 액션 버튼 (한 칸) -->
-            <td class="td-action">
-              <div class="action-buttons">
-                <button
-                  class="btn btn-icon btn-copy"
-                  @click="copyRow(getGlobalIndex(localIndex))"
-                  title="복사"
-                >📄</button>
-
-                <button
-                  class="btn btn-icon btn-edit"
-                  @click="editRow(localIndex)"
-                  :title="isEditing(localIndex) ? '저장' : '수정'"
-                >{{ isEditing(localIndex) ? '💾' : '✏️' }}</button>
-
-                <button
-                  class="btn btn-icon btn-add"
-                  @click="addRowAfter(getGlobalIndex(localIndex))"
-                  title="추가"
-                >➕</button>
-              </div>
+            <!-- 작업 버튼 -->
+            <td>
+              <button v-if="editRow !== order.orderSeq" class="btn-update" @click="editRow = order.orderSeq">✏️ 수정</button>
+              <button v-else class="btn-save" @click="saveRow(order)">💾 저장</button>
+              <button v-if="editRow === order.orderSeq" class="btn-delete" @click="cancelEdit">취소</button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 총 결제 금액 -->
+    <div class="total-amount">
+      총 결제 금액: {{ totalAmount.toLocaleString() }} 원
     </div>
 
     <!-- 페이징 -->
@@ -184,162 +185,169 @@ import axios from "axios";
 export default {
   data() {
     return {
-      editIndex: null, // 전역 인덱스(orders 배열 기준). null이면 편집중 아님
       currentPage: 1,
-      pageSize: 5,
+      pageSize: 10,
       selectedOrders: [],
-      orders: [
-        {
-          주문일자: "2025-09-01",
-          출고일자: "2025-09-02",
-          택배사: "CJ대한통운",
-          송장번호: "6915-0642-5911",
-          거래처명: "히든컴퍼니",
-          주문자: "김철수",
-          상품고유번호: "P-1001",
-          휴대전화: "010-1234-5678",
-          상품명: "프리미엄사료 10kg",
-          결재수단: "카드",
-          우편번호: "05342",
-          수량: 2,
-          단가: 15000,
-          금액: 30000,
-          택배비: 3000,
-          총결재금액: 33000,
-          배송메세지: "부재시 문앞에 두세요",
-          관리자메모: "첫주문 고객",
-          배송지: "서울 강동구 천호동",
-        },
-        {
-          주문일자: "2025-09-02",
-          출고일자: "2025-09-03",
-          택배사: "롯데택배",
-          송장번호: "4077-1005-301",
-          거래처명: "굿컴퍼니",
-          주문자: "이민호",
-          상품고유번호: "P-1002",
-          휴대전화: "010-9876-5432",
-          상품명: "강아지 간식 종세트",
-          결재수단: "무통장",
-          우편번호: "06234",
-          수량: 1,
-          단가: 12000,
-          금액: 12000,
-          택배비: 0,
-          총결재금액: 12000,
-          배송메세지: "빠른 배송 부탁드려요",
-          관리자메모: "VIP 고객",
-          배송지: "서울 서초구 반포동",
-        },
-      ],
+      orders: [],
+      searchQuery: "",
+      searchField: "productName",
+      editRow: null, // 수정 중인 행
     };
   },
   computed: {
+    filteredOrders() {
+      if (!this.searchQuery) return this.orders;
+      return this.orders.filter((order) => {
+        const fieldValue = order[this.searchField];
+        if (!fieldValue) return false;
+        return String(fieldValue).toLowerCase().includes(this.searchQuery.toLowerCase());
+      });
+    },
     totalPages() {
-      return Math.max(1, Math.ceil(this.orders.length / this.pageSize));
+      return Math.max(1, Math.ceil(this.filteredOrders.length / this.pageSize));
     },
     paginatedOrders() {
       const start = (this.currentPage - 1) * this.pageSize;
-      return this.orders.slice(start, start + this.pageSize);
+      return this.filteredOrders.slice(start, start + this.pageSize);
+    },
+    totalAmount() {
+      return this.filteredOrders.reduce(
+        (sum, o) => sum + (o.quantity * o.unitPrice) + (o.shippingFee || 0),
+        0
+      );
     },
   },
   methods: {
-    // helper: 로컬 인덱스 -> 전역 인덱스
+    async fetchOrders() {
+      try {
+        const res = await axios.get("http://localhost:8080/admin/api/order/list");
+        this.orders = res.data;
+      } catch (err) {
+        console.error(err);
+        alert("주문 목록을 불러오는 중 오류 발생");
+      }
+    },
+    clearSearch() {
+      this.searchQuery = "";
+      this.currentPage = 1;
+    },
     getGlobalIndex(localIndex) {
       return localIndex + (this.currentPage - 1) * this.pageSize;
     },
-
-    // 편집 여부 판단 (로컬 인덱스 기준)
-    isEditing(localIndex) {
-      return this.editIndex === this.getGlobalIndex(localIndex);
-    },
-
     prevPage() {
       if (this.currentPage > 1) this.currentPage--;
     },
     nextPage() {
       if (this.currentPage < this.totalPages) this.currentPage++;
     },
-
-    // 복사: 전역 인덱스 사용
-    copyRow(globalIndex) {
-      const newRow = { ...this.orders[globalIndex] };
-      this.orders.splice(globalIndex + 1, 0, newRow);
-
-      // 서버 저장 호출 (옵션)
-      axios
-        .post("http://15.165.125.244:8080/admin/api/order/save", newRow)
-        .then(() => {
-          alert("복사된 주문 저장 완료");
-        })
-        .catch((err) => {
-          console.error(err);
-          alert("복사 저장 중 오류 발생");
-        });
+    getSelectedOrders() {
+      return this.selectedOrders.map((i) => this.filteredOrders[i]);
     },
-
-    // 특정 행 아래에 추가 (전역 인덱스 기준)
-    addRowAfter(globalIndex) {
-      const newRow = {
-        주문일자: "",
-        출고일자: "",
-        택배사: "",
-        송장번호: "",
-        거래처명: "",
-        주문자: "",
-        상품고유번호: "",
-        휴대전화: "",
-        상품명: "",
-        결재수단: "",
-        우편번호: "",
-        수량: 0,
-        단가: 0,
-        금액: 0,
-        택배비: 0,
-        총결재금액: 0,
-        배송메세지: "",
-        관리자메모: "",
-        배송지: "",
+    // ✅ 추가 버튼 → 새 행 추가 + 즉시 편집 가능
+    addOrder() {
+      const newOrder = {
+        orderSeq: Date.now(), // 임시 키
+        shippingDate: "",
+        courier: "",
+        trackingNo: "",
+        orderDate: "",
+        orderType: "",
+        customerName: "",
+        ordererName: "",
+        recPerson: "",
+        productCode: "",
+        phoneNumber: "",
+        productName: "",
+        paymentMethod: "",
+        postalCode: "",
+        quantity: 1,
+        unitPrice: 0,
+        shippingFee: 0,
+        deliveryMessage: "",
+        adminMemo: "",
+        deliveryAddress: "",
       };
-      this.orders.splice(globalIndex + 1, 0, newRow);
-
-      axios
-        .post("http://15.165.125.244:8080/admin/api/order/add", newRow)
-        .then(() => {
-          alert("새 주문 추가 완료");
-        })
-        .catch((err) => {
-          console.error(err);
-          alert("추가 중 오류 발생");
-        });
+      this.orders.unshift(newOrder);
+      this.editRow = newOrder.orderSeq; // 바로 수정 모드
     },
-
-    // editRow은 로컬 인덱스(현재 페이지)를 받아 전역 인덱스로 변환하여 처리
-    editRow(localIndex) {
-      const globalIndex = this.getGlobalIndex(localIndex);
-
-      if (this.editIndex === globalIndex) {
-        // 저장 모드: 금액, 총결재금액 계산 후 서버 전송
-        const target = this.orders[globalIndex];
-        // 숫자 보장
-        target.금액 = Number(target.수량 || 0) * Number(target.단가 || 0);
-        target.총결재금액 = Number(target.금액 || 0) + Number(target.택배비 || 0);
-
-        axios
-          .post("http://15.165.125.244:8080/admin/api/order/modify", target)
-          .then(() => {
-            alert("주문 수정 완료");
-            this.editIndex = null;
-          })
-          .catch((err) => {
-            console.error(err);
-            alert("수정 저장 중 오류 발생");
-          });
-      } else {
-        // 편집 시작: editIndex에 전역 인덱스 저장
-        this.editIndex = globalIndex;
+    // ✅ 복사 버튼 → 새 행 추가 + 즉시 편집 가능
+    copySelected() {
+      const selected = this.getSelectedOrders();
+      selected.forEach((o) => {
+        const copy = { ...o, orderSeq: Date.now() + Math.random() };
+        this.orders.unshift(copy);
+        this.editRow = copy.orderSeq; // 복사 후 즉시 수정 가능
+      });
+    },
+    async saveSelected() {
+      const selected = this.getSelectedOrders();
+      if (!selected.length) {
+        alert("선택된 주문이 없습니다.");
+        return;
+      }
+      try {
+        await axios.post("http://localhost:8080/admin/api/order/save", selected);
+        alert("선택 주문 저장 완료");
+        this.fetchOrders();
+      } catch (err) {
+        console.error(err);
+        alert("저장 중 오류 발생");
       }
     },
+    async updateSelected() {
+      const selected = this.getSelectedOrders();
+      if (!selected.length) {
+        alert("선택된 주문이 없습니다.");
+        return;
+      }
+      try {
+        await axios.post("http://localhost:8080/admin/api/order/update", selected);
+        alert("선택 주문 수정 완료");
+        this.fetchOrders();
+      } catch (err) {
+        console.error(err);
+        alert("수정 중 오류 발생");
+      }
+    },
+    async deleteSelected() {
+      const selected = this.getSelectedOrders();
+      if (!selected.length) {
+        alert("선택된 주문이 없습니다.");
+        return;
+      }
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+
+      // ✅ orderSeq만 추출해서 보내기
+      const orderSeqList = selected.map((o) => o.orderSeq);
+
+      try {
+        await axios.post("http://localhost:8080/admin/api/order/delete", orderSeqList);
+        alert("선택 주문 삭제 완료");
+        this.fetchOrders();
+        this.selectedOrders = [];
+      } catch (err) {
+        console.error(err);
+        alert("삭제 중 오류 발생");
+      }
+    },
+    async saveRow(order) {
+      try {
+        await axios.post("http://localhost:8080/admin/api/order/update", [order]);
+        alert("주문이 수정되었습니다.");
+        this.editRow = null;
+        this.fetchOrders();
+      } catch (err) {
+        console.error(err);
+        alert("수정 중 오류 발생");
+      }
+    },
+    cancelEdit() {
+      this.editRow = null;
+      this.fetchOrders();
+    },
+  },
+  mounted() {
+    this.fetchOrders();
   },
 };
 </script>
@@ -347,159 +355,94 @@ export default {
 <style scoped>
 .table-container {
   width: 100%;
-  margin: 20px auto;
-  padding: 10px;
+  margin: 10px auto;
+  padding: 5px;
   background: #fff;
-  border-radius: 10px;
-  font-size: 12px; /* 전체 글자 크기 통일 */
+  border-radius: 8px;
+  font-size: 11px;
 }
-
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
 }
-
-/* 테이블 기본 */
 .order-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
-  word-wrap: break-word;
-  white-space: normal;
   text-align: center;
+  font-size: 11px;
 }
-
-/* 헤더 복구: 배경/글자/패딩/고정(선택적) */
-.order-table thead th {
+.order-table th {
   background: #222;
   color: #fff;
-  padding: 8px 6px;
-  font-weight: 600;
-  font-size: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  padding: 4px;
 }
-
-/* 셀 스타일 */
 .order-table td {
   border: 1px solid #e6e6e6;
-  padding: 6px 4px;
-  vertical-align: middle;
-  font-size: 12px;
-  line-height: 1.2;
+  padding: 3px;
 }
-
-/* 체크박스 칸 좁히기 */
-.td-check,
-.order-table th:first-child,
-.order-table td:first-child {
-  width: 34px;
-  text-align: center;
-  padding: 6px 2px;
-}
-
-/* 액션 칸 고정 폭 */
-.th-action,
-.td-action,
-.order-table th:last-child,
-.order-table td:last-child {
-  width: 110px;
-  text-align: center;
-  padding: 6px 4px;
-}
-
-/* 입력창/텍스트영역 작게 */
 .edit-input {
-  width: 95%;
-  padding: 4px 6px;
-  margin: 2px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 12px;
-  box-sizing: border-box;
+  width: 90%;
+  font-size: 11px;
+  padding: 2px;
 }
-
 .edit-textarea {
-  width: 95%;
-  padding: 4px 6px;
-  margin: 2px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  resize: vertical;
-  font-size: 12px;
-  box-sizing: border-box;
+  width: 90%;
+  font-size: 11px;
+  padding: 2px;
+  height: 30px;
 }
-
-/* 액션 버튼 그룹 */
-.action-buttons {
+.global-actions {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.global-actions button {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.btn-add { background: #28a745; color: #fff; }
+.btn-copy { background: #6f42c1; color: #fff; }
+.btn-save { background: #007bff; color: #fff; }
+.btn-update { background: #fd7e14; color: #fff; }
+.btn-delete { background: #dc3545; color: #fff; }
+.pagination {
+  margin-top: 8px;
   display: flex;
   justify-content: center;
   gap: 6px;
-  align-items: center;
+  font-size: 11px;
 }
-
-/* 아이콘 버튼 (작게) */
-.btn {
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-/* 아이콘 고정 크기 (작게) */
-.btn-icon {
-  width: 26px;
-  height: 26px;
-  font-size: 14px;
-  line-height: 1;
-}
-
-/* 버튼 색상 */
-.btn-copy {
-  background: #6c757d;
-}
-.btn-edit {
-  background: #ffc107;
-  color: #000;
-}
-.btn-add {
-  background: #28a745;
-}
-
-/* 체크박스 크기 */
-input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-}
-
-/* 페이징 */
-.pagination {
+.search-bar {
+  margin-bottom: 8px;
   display: flex;
-  justify-content: center;
+  gap: 6px;
   align-items: center;
-  margin-top: 12px;
-  gap: 8px;
-  font-size: 12px;
+  font-size: 11px;
 }
-
-.pagination button {
-  padding: 4px 8px;
-  background: #007bff;
+.search-bar input,
+.search-bar select {
+  padding: 2px 4px;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.search-bar button {
+  padding: 2px 6px;
+  font-size: 11px;
+  background: #dc3545;
   color: #fff;
   border: none;
   border-radius: 4px;
-  font-size: 12px;
   cursor: pointer;
 }
-
-.pagination button:disabled {
-  background: #ccc;
-  cursor: default;
-  color: #666;
+.total-amount {
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 12px;
+  text-align: right;
 }
 </style>
