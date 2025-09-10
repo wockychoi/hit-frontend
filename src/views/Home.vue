@@ -1,7 +1,14 @@
 <template>
   <div class="table-container">
-    <h2>📦 주문내역 관리</h2>
+    <h2>주문내역 관리</h2>
     <p>Total {{ filteredOrders.length }}건</p>
+
+    <!-- ✅ 합계 박스 (오른쪽 상단) -->
+    <div class="summary-box">
+      <div class="summary-item">금액 합계 : <span>{{ totalProductAmount.toLocaleString() }}</span> 원</div>
+      <div class="summary-item">택배비 합계 : <span>{{ totalShippingFee.toLocaleString() }}</span> 원</div>
+      <div class="summary-item total">총 합계 : <span>{{ totalFinalAmount.toLocaleString() }}</span> 원</div>
+    </div>
 
     <!-- 검색창 -->
     <div class="search-bar">
@@ -43,20 +50,18 @@
             <th>구분</th>
             <th>거래처명</th>
             <th>주문자</th>
-            <th>수령자</th>
-            <th>상품고유번호</th>
-            <th>휴대전화</th>
-            <th>상품명</th>
+            <th>수령자<br>상품고유번호</th>
+            <th>휴대전화<br>상품명</th>
             <th>결제수단</th>
-            <th>우편번호</th>
-            <th>수량</th>
+            <th>우편번호<br>수량</th>
             <th>단가</th>
             <th>금액</th>
             <th>택배비</th>
             <th>총결제금액</th>
+            <th>배송지</th>
             <th>배송메세지</th>
             <th>관리자메모</th>
-            <th>배송지</th>
+            <th v-if="editRow !== null">user_id</th>
             <th>작업</th>
           </tr>
         </thead>
@@ -103,44 +108,62 @@
               <span v-if="editRow !== order.orderSeq">{{ order.ordererName }}</span>
               <input v-else v-model="order.ordererName" class="edit-input" />
             </td>
+
+            <!-- 수령자 + 상품고유번호 -->
             <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.recPerson }}</span>
-              <input v-else v-model="order.recPerson" class="edit-input" />
+              <div>
+                <span v-if="editRow !== order.orderSeq">{{ maskName(order.recPerson) }}</span>
+                <input v-else v-model="order.recPerson" class="edit-input" />
+              </div>
+              <div>
+                <span v-if="editRow !== order.orderSeq">{{ order.productCode }}</span>
+                <input v-else v-model="order.productCode" class="edit-input" />
+              </div>
             </td>
+
+            <!-- 휴대전화 + 상품명 -->
             <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.productCode }}</span>
-              <input v-else v-model="order.productCode" class="edit-input" />
+              <div>
+                <span v-if="editRow !== order.orderSeq">{{ maskPhone(order.phoneNumber) }}</span>
+                <input v-else v-model="order.phoneNumber" class="edit-input" />
+              </div>
+              <div>
+                <span v-if="editRow !== order.orderSeq">{{ order.productName }}</span>
+                <input v-else v-model="order.productName" class="edit-input" />
+              </div>
             </td>
-            <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.phoneNumber }}</span>
-              <input v-else v-model="order.phoneNumber" class="edit-input" />
-            </td>
-            <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.productName }}</span>
-              <input v-else v-model="order.productName" class="edit-input" />
-            </td>
+
             <td>
               <span v-if="editRow !== order.orderSeq">{{ order.paymentMethod }}</span>
               <input v-else v-model="order.paymentMethod" class="edit-input" />
             </td>
+
+            <!-- 우편번호 + 수량 -->
             <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.postalCode }}</span>
-              <input v-else v-model="order.postalCode" class="edit-input" />
+              <div>
+                <span v-if="editRow !== order.orderSeq">{{ order.postalCode }}</span>
+                <input v-else v-model="order.postalCode" class="edit-input" />
+              </div>
+              <div>
+                <span v-if="editRow !== order.orderSeq">{{ order.quantity }}</span>
+                <input v-else v-model.number="order.quantity" type="number" class="edit-input" />
+              </div>
             </td>
+
             <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.quantity }}</span>
-              <input v-else v-model.number="order.quantity" type="number" class="edit-input" />
-            </td>
-            <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.unitPrice }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ formatCurrency(order.unitPrice) }}</span>
               <input v-else v-model.number="order.unitPrice" type="number" class="edit-input" />
             </td>
-            <td>{{ order.quantity * order.unitPrice }}</td>
+            <td>{{ formatCurrency(order.quantity * order.unitPrice) }}</td>
             <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.shippingFee }}</span>
+              <span v-if="editRow !== order.orderSeq">{{ formatCurrency(order.shippingFee) }}</span>
               <input v-else v-model.number="order.shippingFee" type="number" class="edit-input" />
             </td>
-            <td>{{ (order.quantity * order.unitPrice) + (order.shippingFee || 0) }}</td>
+            <td>{{ formatCurrency((order.quantity * order.unitPrice) + (order.shippingFee || 0)) }}</td>
+            <td>
+              <span v-if="editRow !== order.orderSeq">{{ order.deliveryAddress }}</span>
+              <textarea v-else v-model="order.deliveryAddress" class="edit-textarea"></textarea>
+            </td>
             <td>
               <span v-if="editRow !== order.orderSeq">{{ order.deliveryMessage }}</span>
               <textarea v-else v-model="order.deliveryMessage" class="edit-textarea"></textarea>
@@ -149,10 +172,12 @@
               <span v-if="editRow !== order.orderSeq">{{ order.adminMemo }}</span>
               <textarea v-else v-model="order.adminMemo" class="edit-textarea"></textarea>
             </td>
-            <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.deliveryAddress }}</span>
-              <textarea v-else v-model="order.deliveryAddress" class="edit-textarea"></textarea>
+
+            <!-- user_id -->
+            <td v-if="editRow === order.orderSeq">
+              <input v-model="order.userId" class="edit-input" />
             </td>
+            <td v-else-if="editRow !== null"></td>
 
             <!-- 작업 버튼 -->
             <td>
@@ -191,7 +216,7 @@ export default {
       orders: [],
       searchQuery: "",
       searchField: "productName",
-      editRow: null, // 수정 중인 행
+      editRow: null,
     };
   },
   computed: {
@@ -216,8 +241,38 @@ export default {
         0
       );
     },
+    // 합계 계산
+    totalProductAmount() {
+      return this.filteredOrders.reduce(
+        (sum, o) => sum + (o.quantity * o.unitPrice),
+        0
+      );
+    },
+    totalShippingFee() {
+      return this.filteredOrders.reduce(
+        (sum, o) => sum + (o.shippingFee || 0),
+        0
+      );
+    },
+    totalFinalAmount() {
+      return this.totalProductAmount + this.totalShippingFee;
+    },
   },
   methods: {
+    maskName(name) {
+      if (!name) return "";
+      if (name.length <= 2) return name[0] + "*".repeat(name.length - 1);
+      return name.slice(0, -2) + "**";
+    },
+    maskPhone(phone) {
+      if (!phone) return "";
+      if (phone.length <= 4) return "*".repeat(phone.length);
+      return phone.slice(0, -4) + "****";
+    },
+    formatCurrency(value) {
+      if (value == null) return "0";
+      return Number(value).toLocaleString();
+    },
     async fetchOrders() {
       try {
         const res = await axios.get("http://localhost:8080/admin/api/order/list");
@@ -243,10 +298,10 @@ export default {
     getSelectedOrders() {
       return this.selectedOrders.map((i) => this.filteredOrders[i]);
     },
-    // ✅ 추가 버튼 → 새 행 추가 + 즉시 편집 가능
     addOrder() {
       const newOrder = {
-        orderSeq: Date.now(), // 임시 키
+        orderSeq: Date.now(),
+        user_id: "", // 신규 추가 시 user_id 필드 포함
         shippingDate: "",
         courier: "",
         trackingNo: "",
@@ -268,15 +323,14 @@ export default {
         deliveryAddress: "",
       };
       this.orders.unshift(newOrder);
-      this.editRow = newOrder.orderSeq; // 바로 수정 모드
+      this.editRow = newOrder.orderSeq;
     },
-    // ✅ 복사 버튼 → 새 행 추가 + 즉시 편집 가능
     copySelected() {
       const selected = this.getSelectedOrders();
       selected.forEach((o) => {
         const copy = { ...o, orderSeq: Date.now() + Math.random() };
         this.orders.unshift(copy);
-        this.editRow = copy.orderSeq; // 복사 후 즉시 수정 가능
+        this.editRow = copy.orderSeq;
       });
     },
     async saveSelected() {
@@ -317,7 +371,6 @@ export default {
       }
       if (!confirm("정말 삭제하시겠습니까?")) return;
 
-      // ✅ orderSeq만 추출해서 보내기
       const orderSeqList = selected.map((o) => o.orderSeq);
 
       try {
@@ -360,6 +413,7 @@ export default {
   background: #fff;
   border-radius: 8px;
   font-size: 11px;
+  position: relative;
 }
 .table-wrapper {
   width: 100%;
@@ -372,13 +426,20 @@ export default {
   font-size: 11px;
 }
 .order-table th {
-  background: #222;
+  background: #333;
   color: #fff;
   padding: 4px;
+  border: 1px solid #555;
 }
 .order-table td {
-  border: 1px solid #e6e6e6;
+  border: 1px solid #ddd;
   padding: 3px;
+}
+.order-table tbody tr:nth-child(odd) {
+  background: #fafafa;
+}
+.order-table tbody tr:nth-child(even) {
+  background: #f0f0f0;
 }
 .edit-input {
   width: 90%;
@@ -444,5 +505,32 @@ export default {
   font-weight: bold;
   font-size: 12px;
   text-align: right;
+}
+
+/* ✅ 합계 박스 스타일 */
+.summary-box {
+  margin-top:30px;
+  margin-right:15px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 17px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  text-align: right;
+}
+.summary-box .summary-item {
+  margin-bottom: 4px;
+}
+.summary-box .summary-item span {
+  font-weight: bold;
+  color: #333;
+}
+.summary-box .total {
+  font-weight: bold;
+  color: #007bff;
 }
 </style>
