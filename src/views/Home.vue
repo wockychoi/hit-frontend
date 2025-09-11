@@ -60,7 +60,7 @@
             <th>총결제금액</th>
             <th>배송지</th>
             <th>배송메세지</th>
-            <th>관리자메모</th>
+            <th v-if="roleId == 2">관리자메모</th>
             <th v-if="editRow !== null">user_id</th>
             <th>작업</th>
           </tr>
@@ -100,10 +100,19 @@
               <span v-if="editRow !== order.orderSeq">{{ order.orderType }}</span>
               <input v-else v-model="order.orderType" class="edit-input" />
             </td>
+
+            <!-- ✅ 거래처명: select 박스로 변경 -->
             <td>
-              <span v-if="editRow !== order.orderSeq">{{ order.customerName }}</span>
-              <input v-else v-model="order.customerName" class="edit-input" />
+              <span v-if="editRow !== order.orderSeq">
+                {{ getUserName(order.userId) }}
+              </span>
+              <select v-else v-model="order.userId" class="edit-input">
+                <option v-for="u in userList" :key="u.userId" :value="u.userId">
+                  {{ u.userNm }}
+                </option>
+              </select>
             </td>
+
             <td>
               <span v-if="editRow !== order.orderSeq">{{ order.ordererName }}</span>
               <input v-else v-model="order.ordererName" class="edit-input" />
@@ -168,7 +177,7 @@
               <span v-if="editRow !== order.orderSeq">{{ order.deliveryMessage }}</span>
               <textarea v-else v-model="order.deliveryMessage" class="edit-textarea"></textarea>
             </td>
-            <td>
+            <td  v-if="roleId == 2">
               <span v-if="editRow !== order.orderSeq">{{ order.adminMemo }}</span>
               <textarea v-else v-model="order.adminMemo" class="edit-textarea"></textarea>
             </td>
@@ -205,7 +214,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import axios from '../utils/axiosInstance'
 
 export default {
   data() {
@@ -217,6 +226,9 @@ export default {
       searchQuery: "",
       searchField: "productName",
       editRow: null,
+      roleId: null, // ✅ roleId 저장
+      userList: [], // ✅ 사용자 리스트 저장
+       loginUserId: null, // ✅ 일반 사용자 ID 저장
     };
   },
   computed: {
@@ -282,6 +294,19 @@ export default {
         alert("주문 목록을 불러오는 중 오류 발생");
       }
     },
+    async fetchUsers() {
+      try {
+        const res = await axios.get("http://localhost:8080/admin/api/user/list");
+        this.userList = res.data;
+      } catch (err) {
+        console.error(err);
+        alert("사용자 목록 불러오기 오류");
+      }
+    },
+    getUserName(userId) {
+      const user = this.userList.find((u) => u.userId === userId);
+      return user ? user.userNm : "";
+    },
     clearSearch() {
       this.searchQuery = "";
       this.currentPage = 1;
@@ -301,7 +326,7 @@ export default {
     addOrder() {
       const newOrder = {
         orderSeq: Date.now(),
-        user_id: "", // 신규 추가 시 user_id 필드 포함
+        userId: "", // ✅ userId로 변경
         shippingDate: "",
         courier: "",
         trackingNo: "",
@@ -400,12 +425,23 @@ export default {
     },
   },
   mounted() {
+    // ✅ 로컬스토리지에서 roleId 가져오기
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData && userData.roleId) {
+      this.roleId = userData.roleId;
+    }
+    if (userData && userData.userId) {
+    this.loginUserId = userData.userId; // 일반 사용자 확인용
+  }
+
     this.fetchOrders();
+    this.fetchUsers(); // ✅ 사용자 리스트 불러오기
   },
 };
 </script>
 
 <style scoped>
+/* 기존 CSS 그대로 유지 */
 .table-container {
   width: 100%;
   margin: 10px auto;
