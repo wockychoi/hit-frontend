@@ -286,14 +286,24 @@ export default {
       return Number(value).toLocaleString();
     },
     async fetchOrders() {
-      try {
-        const res = await axios.get("http://localhost:8080/admin/api/order/list");
-        this.orders = res.data;
-      } catch (err) {
-        console.error(err);
-        alert("주문 목록을 불러오는 중 오류 발생");
-      }
-    },
+        try {
+          const params = {};
+
+          // ✅ roleId가 2가 아니면 loginUserId를 파라미터로 추가
+          if (this.roleId != 2 && this.loginUserId) {
+            params.loginUserId = this.loginUserId;
+          }
+
+          const res = await axios.get("http://localhost:8080/admin/api/order/list", {
+            params,
+          });
+
+          this.orders = res.data;
+        } catch (err) {
+          console.error(err);
+          alert("주문 목록을 불러오는 중 오류 발생");
+        }
+      },
     async fetchUsers() {
       try {
         const res = await axios.get("http://localhost:8080/admin/api/user/list");
